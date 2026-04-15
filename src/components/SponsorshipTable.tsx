@@ -30,7 +30,7 @@ export const SponsorshipTable = ({ jobs }: SponsorshipTableProps) => {
   };
 
   const sortedJobs = useMemo(() => {
-    let sortableJobs = [...jobs];
+    const sortableJobs = [...jobs];
     if (sortConfig !== null) {
       sortableJobs.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -60,7 +60,7 @@ export const SponsorshipTable = ({ jobs }: SponsorshipTableProps) => {
         <table className="w-full">
           <thead className="bg-gradient-to-r from-primary/5 to-accent/5">
             <tr>
-              <th 
+              <th
                 className="px-6 py-4 text-left text-sm font-semibold text-foreground cursor-pointer hover:bg-black/5 transition-colors"
                 onClick={() => requestSort('companyName')}
               >
@@ -75,7 +75,7 @@ export const SponsorshipTable = ({ jobs }: SponsorshipTableProps) => {
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
                 Location
               </th>
-              <th 
+              <th
                 className="px-6 py-4 text-left text-sm font-semibold text-foreground cursor-pointer hover:bg-black/5 transition-colors"
                 onClick={() => requestSort('postedDate')}
               >
@@ -189,11 +189,10 @@ export const SponsorshipTable = ({ jobs }: SponsorshipTableProps) => {
                   <tr>
                     <td colSpan={3} className="px-4 pt-0">
                       <div
-                        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                          isOpen
+                        className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen
                             ? "max-h-40 opacity-100 mt-2"
                             : "max-h-0 opacity-0"
-                        }`}
+                          }`}
                       >
                         <div className="bg-muted/30 rounded-md p-3 space-y-1 text-sm">
                           <p>

@@ -168,7 +168,7 @@ export default function DomainDetailPage() {
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">No roles found</h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
-            We couldn't find any {roleName} positions in {selectedCountry.label} matching your date range.
+            We couldn&apos find any {roleName} positions in {selectedCountry.label} matching your date range.
           </p>
           <Button
             variant="outline"
