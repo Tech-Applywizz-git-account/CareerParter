@@ -15,6 +15,18 @@ export async function GET() {
       return Response.json({ user: null }, { status: 401 });
     }
 
+    // Refresh role from DB to ensure it's current
+    const { supabase } = await import("@/lib/supabase");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.userId)
+      .single();
+
+    if (profile) {
+      user.role = profile.role;
+    }
+
     return Response.json({ user });
   } catch (err) {
     console.error("Auth check failed:", err);

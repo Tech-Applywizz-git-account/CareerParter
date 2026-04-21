@@ -21,7 +21,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 interface User {
-  user_id: string;
+  id: string;
   email: string;
   full_name: string | null;
   created_at: string | null;
@@ -110,7 +110,7 @@ export default function AdminControls() {
 
       // Update local state
       setUsers(users.map(user =>
-        user.user_id === userId ? { ...user, status } : user
+        user.id === userId ? { ...user, status } : user
       ));
 
       showToast(`User status updated to ${status ? "Paid" : "Unpaid"}`, "success");
@@ -243,7 +243,7 @@ export default function AdminControls() {
 
     setIsDeletingUser(true);
     try {
-      const response = await fetch(`/api/admin/users/${userToDelete.user_id}`, {
+      const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
         method: "DELETE",
       });
 
@@ -254,7 +254,7 @@ export default function AdminControls() {
       }
 
       // Update local state
-      setUsers(users.filter(user => user.user_id !== userToDelete.user_id));
+      setUsers(users.filter(user => user.id !== userToDelete.id));
       showToast("User deleted successfully", "success");
       setShowDeleteConfirm(false);
       setUserToDelete(null);
@@ -491,7 +491,7 @@ export default function AdminControls() {
                           </tr>
                         ) : (
                           currentUsers.map((user, index) => (
-                            <tr key={user.user_id}>
+                            <tr key={user.id}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {indexOfFirstUser + index + 1}
                               </td>
@@ -527,7 +527,7 @@ export default function AdminControls() {
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <select
                                   value={user.status ? "paid" : "unpaid"}
-                                  onChange={(e) => updateUserStatus(user.user_id, e.target.value === "paid")}
+                                  onChange={(e) => updateUserStatus(user.id, e.target.value === "paid")}
                                   className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                 >
                                   <option value="paid">Paid</option>

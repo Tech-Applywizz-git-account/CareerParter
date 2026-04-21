@@ -29,7 +29,8 @@ import {
 
 export default function LoginPage() {
   const { loading } = useAuth();
-
+  const [isLogin, setIsLogin] = useState(true);
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,16 +47,22 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
+      const body = isLogin 
+        ? { email, password } 
+        : { email, password, fullName };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
         credentials: "include",
       });
       if (res.ok) {
         window.location.href = "/";
       } else {
-        setError("Invalid email or password.");
+        const data = await res.json();
+        setError(data.error || (isLogin ? "Invalid email or password." : "Signup failed."));
       }
     } catch {
       setError("Something went wrong.");
@@ -71,9 +78,9 @@ export default function LoginPage() {
     setForgotType("");
 
     try {
-      // First, check if the email exists in the users table
+      // First, check if the email exists in the profiles table
       const { data: userData, error: userError } = await supabase
-        .from("users")
+        .from("profiles")
         .select("email")
         .eq("email", forgotEmail)
         .single();
@@ -113,13 +120,28 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg border-border">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-foreground">
-            Welcome back
+            {isLogin ? "Welcome back" : "Create an account"}
           </CardTitle>
-          <CardDescription>Sign in to continue</CardDescription>
+          <CardDescription>
+            {isLogin ? "Sign in to continue" : "Join us to get started"}
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required={!isLogin}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -164,9 +186,8 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-1">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -176,9 +197,23 @@ export default function LoginPage() {
               disabled={isSubmitting || loading}
               className="w-full"
             >
-              {isSubmitting ? "Signing in..." : "Sign In"}
+              {isSubmitting 
+                ? (isLogin ? "Signing in..." : "Creating account...") 
+                : (isLogin ? "Sign In" : "Sign Up")}
             </Button>
           </form>
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError(null);
+              }}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+            </button>
+          </div>
         </CardContent>
 
         <CardFooter className="flex justify-center">

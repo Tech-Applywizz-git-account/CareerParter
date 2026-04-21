@@ -17,10 +17,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [jobPostsTodayCount, setJobPostsTodayCount] = useState<number>(0);
-  
+
   // FIX THIS LINE - Remove "/" check
   const isAuthPage = pathname === "/auth/set-password";
-  
+
   // console.log("🟢 Debug:", {
   //   pathname,
   //   isAuthPage,
@@ -29,29 +29,29 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   // });
 
   useEffect(() => {
-    
-    
+
+
     // This should now work since "/" is not considered an auth page
     if (user && !isAuthPage) {
-      
-      
+
+
       const fetchJobPostsToday = async () => {
         try {
-    
+
           const res = await fetch("/api/job-posts-today?date=today");
           const data = await res.json();
-          
-        
+
+
           const count = data.job_posts_today || 0;
-        
-          
+
+
           setJobPostsTodayCount(count);
         } catch (error) {
           console.error("❌ Error fetching:", error);
           setJobPostsTodayCount(0);
         }
       };
-      
+
       fetchJobPostsToday();
     } else {
       console.log("🟡 Not fetching because:", {
@@ -172,13 +172,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="truncate">{user.email}</span>
               {user.role && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    user.role === "admin"
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${user.role === "admin"
                       ? "bg-destructive/10 text-destructive"
                       : user.role === "lead"
                         ? "bg-primary/10 text-primary"
                         : "bg-muted text-foreground"
-                  }`}
+                    }`}
                 >
                   {user.role}
                 </span>
@@ -199,7 +198,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col">
         {/* Header */}
 
-               {/* Header */}
+        {/* Header */}
 
         <header className="border-b border-border bg-card h-16 flex items-center px-4 sm:px-6 lg:px-8">
           {/* Left: Mobile Menu Button (only on mobile) */}
@@ -232,13 +231,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                 </span>
                 {user.role && (
                   <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                      user.role === "admin"
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${user.role === "admin"
                         ? "bg-destructive/10 text-destructive"
                         : user.role === "lead"
                           ? "bg-primary/10 text-primary"
                           : "bg-muted text-foreground"
-                    }`}
+                      }`}
                   >
                     {user.role}
                   </span>
@@ -272,6 +270,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/logo.png" type="image/png" />
+      </head>
       <body className="antialiased min-h-screen bg-gray-50" suppressHydrationWarning>
         <FiltersProvider>
           <AuthProvider>

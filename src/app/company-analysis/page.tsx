@@ -1,68 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { CompanyCard } from "@/components/CompanyCard";
 import { Search } from "lucide-react";
 import { CountrySelector } from "@/components/CountrySelector";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { useFilters } from "@/contexts/FiltersContext";
 
+import { Pagination } from "@/components/Pagination";
+
 interface Company {
   id: string;
   name: string;
   sponsored_jobs: number;
+  website?: string;
 }
 
 const CompaniesPage = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 48; // Multiple of 4, 3, 2 and 1 for grid consistency
   const { selectedCountry, fromDate, toDate } = useFilters();
 
-  // 🧠 Fetch companies on mount
+  // 🧠 Fetch companies when filters change
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const res = await fetch("/api/company");
+        setLoading(true);
+        const url = `/api/company?country=${encodeURIComponent(selectedCountry.value)}&from=${fromDate}&to=${toDate}`;
+        const res = await fetch(url);
         const data = await res.json();
 
-        const mapped = data.map((item: any) => ({
+        // 🚀 Ensure data is an array before mapping
+        const rawData = Array.isArray(data) ? data : [];
+        const mapped = rawData.map((item: any) => ({
           id: item.company,
           name: item.company,
           sponsored_jobs: item.sponsored_jobs,
+          website: item.website,
         }));
 
         setCompanies(mapped);
         setFilteredCompanies(mapped);
+        setCurrentPage(1); // Reset to first page
       } catch (err) {
         console.error("Error fetching companies:", err);
+        setCompanies([]);
+        setFilteredCompanies([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCompanies();
-  }, []);
+  }, [selectedCountry.value, fromDate, toDate]);
 
-  // 🔍 Handle search input
+  // 🕒 Debounce the search input to keep the UI responsive
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(localSearchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [localSearchTerm]);
+
+  // 🔍 Handle search filtering
   useEffect(() => {
     const term = searchTerm.toLowerCase();
 
-    // Add a slight delay for smoother typing experience
-    const timer = setTimeout(() => {
-      setFilteredCompanies(
-        companies.filter((company) =>
-          company.name.toLowerCase().includes(term),
-        ),
-      );
-    }, 150);
-
-    return () => clearTimeout(timer);
+    // No need for timeout here as searchTerm is already debounced
+    const filtered = companies.filter((company) =>
+      company.name.toLowerCase().includes(term),
+    );
+    setFilteredCompanies(filtered);
+    setCurrentPage(1); // Reset to first page on search
   }, [searchTerm, companies]);
 
-  // The loading skeletons will be rendered in the main grid below
-  // Removing the early return here to keep the header and filter bar visible while loading
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCompanies.length / pageSize);
+  const paginatedCompanies = useMemo(() => {
+    return filteredCompanies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredCompanies, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -88,42 +115,55 @@ const CompaniesPage = () => {
           <input
             type="text"
             placeholder="Search companies..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
           />
         </div>
       </div>
 
-      {/* Companies Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 12 }).map((_, i) => (
+      {/* Companies Grid - Memoized to prevent re-renders when typing in the search bar */}
+      <div className="space-y-8 pb-10">
+        {useMemo(() => (
+          loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-32 rounded-xl bg-muted/40 animate-pulse border border-border/50"
+                />
+              ))}
+            </div>
+          ) : paginatedCompanies.length > 0 ? (
             <div
-              key={i}
-              className="h-32 rounded-xl bg-muted/40 animate-pulse border border-border/50"
-            />
-          ))}
-        </div>
-      ) : filteredCompanies.length > 0 ? (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all"
-          key={searchTerm + selectedCountry.value} // forces a soft reflow animation when search changes
-        >
-          {filteredCompanies.map((company) => (
-            <CompanyCard
-              key={company.id}
-              id={company.id}
-              name={company.name}
-              sponsored_jobs={company.sponsored_jobs}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          No companies found matching &quot;{searchTerm}&quot{" "}
-        </div>
-      )}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all"
+              key={selectedCountry.value + currentPage} 
+            >
+              {paginatedCompanies.map((company) => (
+                <CompanyCard
+                  key={company.id}
+                  id={company.id}
+                  name={company.name}
+                  sponsored_jobs={company.sponsored_jobs}
+                  website={company.website}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              No companies found matching &quot;{searchTerm}&quot;
+            </div>
+          )
+        ), [loading, paginatedCompanies, searchTerm, selectedCountry.value, currentPage])}
+
+        {!loading && (
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
+      </div>
     </div>
   );
 };

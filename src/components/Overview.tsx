@@ -7,7 +7,7 @@ import {
   ArrowRight, CheckCircle2, MapPin, Building2,
   TrendingUp, Flame, Globe2, Zap, Star, Clock
 } from "lucide-react";
-import { useFilters, COUNTRIES } from "@/contexts/FiltersContext";
+import { useFilters } from "@/contexts/FiltersContext";
 
 interface Job {
   id: number;
@@ -28,7 +28,7 @@ interface ChartData {
 
 const Overview = () => {
   const router = useRouter();
-  const { setSelectedCountry } = useFilters();
+  const { selectedCountry, setSelectedCountry, availableCountries } = useFilters();
   const [latestJobs, setLatestJobs] = useState<Job[]>([]);
   const [topCompanies, setTopCompanies] = useState<ChartData[]>([]);
   const [jobPostsTodayCount, setJobPostsTodayCount] = useState<number>(0);
@@ -38,10 +38,10 @@ const Overview = () => {
     const fetchOverview = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/overview");
+        const res = await fetch(`/api/overview?country=${encodeURIComponent(selectedCountry.value)}`);
         const data = await res.json();
 
-        const jobPostsRes = await fetch(`/api/job-posts-today?date=today`);
+        const jobPostsRes = await fetch(`/api/job-posts-today?date=today&country=${encodeURIComponent(selectedCountry.value)}`);
         const jobPostsData = await jobPostsRes.json();
         setJobPostsTodayCount(jobPostsData.job_posts_today || 0);
 
@@ -73,7 +73,7 @@ const Overview = () => {
     };
 
     fetchOverview();
-  }, []);
+  }, [selectedCountry.value]);
 
   // ─── Location helpers ─────────────────────────────────────────────────────
   const countLocation = (keyword: string) =>
@@ -406,35 +406,36 @@ const Overview = () => {
         <section className="bg-white rounded-2xl p-6 border border-border shadow-sm">
           <h2 className="text-base font-bold text-foreground mb-4">Where Opportunities Are Today</h2>
           <div className="space-y-1">
-            {[
-              { flag: "fi-us", name: "USA",   subtitle: "Primary market",    count: usJobs.length || 5,  bold: true,  countryValue: "United States of America" },
-              { flag: "fi-jp", name: "Japan", subtitle: "Engineering-heavy", count: japanCount || 10,    bold: false, countryValue: "Japan" },
-              { flag: "fi-ae", name: "UAE",   subtitle: "Growth roles",      count: uaeCount || 8,       bold: false, countryValue: "United Arab Emirates" },
-              { flag: "fi-in", name: "India", subtitle: "Support roles",     count: indiaCount || 7,     bold: false, countryValue: "India" },
-            ].map(({ flag, name, subtitle, count, bold, countryValue }) => {
-              const country = COUNTRIES.find(c => c.value === countryValue);
+            {availableCountries.map((country) => {
+              const isUS = country.value === "United States of America";
+              const count = isUS ? (usJobs.length || 5) : (countLocation(country.value) || 0);
+              
               return (
                 <button
-                  key={name}
+                  key={country.value}
                   onClick={() => {
-                    if (country) setSelectedCountry(country);
+                    setSelectedCountry(country);
                     router.push("/role-analysis");
                   }}
                   className={`w-full flex items-center justify-between py-3 px-3 rounded-xl border transition-all group cursor-pointer ${
-                    bold
+                    isUS
                       ? "bg-blue-50 border-blue-100 hover:bg-blue-100 hover:border-blue-200"
                       : "bg-transparent border-transparent hover:bg-muted hover:border-border"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`leading-none fi ${flag} rounded-[2px] ${bold ? "text-2xl" : "text-xl"}`} />
+                    <span className={`leading-none ${country.flag} rounded-[2px] ${isUS ? "text-2xl" : "text-xl"}`} />
                     <div className="text-left">
-                      <p className={`${bold ? "font-bold" : "font-semibold"} text-foreground text-sm`}>{name}</p>
-                      <p className="text-xs text-muted-foreground">{subtitle}</p>
+                      <p className={`${isUS ? "font-bold" : "font-semibold"} text-foreground text-sm`}>
+                        {country.label.split(' ').slice(0, 2).join(' ')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isUS ? "Primary market" : "Active opportunities"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm ${bold ? "font-bold text-primary" : "font-medium text-foreground"}`}>
+                    <span className={`text-sm ${isUS ? "font-bold text-primary" : "font-medium text-foreground"}`}>
                       {count} jobs
                     </span>
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

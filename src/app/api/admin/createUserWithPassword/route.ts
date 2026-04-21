@@ -28,6 +28,16 @@ export async function POST(req: Request) {
                 { status: 400 },
             );
         }
+
+        // 2. Insert into custom profiles table
+        const { error: dbError } = await supabaseAdmin
+            .from("profiles")
+            .insert([{ id: authData.user.id, email, role, country, status: true }]);
+
+        if (dbError) {
+            return Response.json({ error: dbError.message }, { status: 400 });
+        }
+
         return Response.json({
             message: "User created successfully!",
         });

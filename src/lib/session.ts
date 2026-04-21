@@ -34,9 +34,9 @@ export async function getUserCountry(req: NextRequest) {
   );
 
   const { data, error } = await supabase
-    .from("users")
+    .from("profiles")
     .select("country")
-    .eq("user_id", val.userId)
+    .eq("id", val.userId)
     .maybeSingle();
 
   if (error) console.error("Error fetching user country:", error);

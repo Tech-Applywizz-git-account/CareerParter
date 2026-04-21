@@ -18,7 +18,7 @@ export async function GET(
     const { id } = await context.params;
     const companyName = decodeURIComponent(id);
 
-    const country = await getUserCountry(req);
+    const country = req.nextUrl.searchParams.get("country") || (await getUserCountry(req));
 
     // 2️⃣ Query all jobs for this company
     const { data, error } = await supabase

@@ -35,10 +35,10 @@ export async function POST(req: Request) {
       return Response.json({ error: inviteError.message }, { status: 400 });
     }
 
-    // 3. Insert into custom users table
+    // 3. Insert into custom profiles table
     const { error: dbError } = await supabaseAdmin
-      .from("users")
-      .insert([{ user_id: authData.user.id, email, role, country }]);
+      .from("profiles")
+      .insert([{ id: authData.user.id, email, role, country }]);
 
     if (dbError) {
       return Response.json({ error: dbError.message }, { status: 400 });

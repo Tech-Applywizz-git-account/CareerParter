@@ -13,7 +13,7 @@ const supabase = createClient(
 export async function GET(req: NextRequest) {
   try {
 
-    const country = await getUserCountry(req);
+    const country = req.nextUrl.searchParams.get("country") || (await getUserCountry(req));
 
     // 1️⃣ Total Companies (total rows)
     const { count: total_companies, error: totalCompaniesError } =

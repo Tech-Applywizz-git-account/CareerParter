@@ -31,11 +31,19 @@ export async function GET(request: NextRequest) {
     
     console.log(`Fetching job posts count for date: ${targetDate}`);
     
+    const countryParam = searchParams.get('country');
+    
     // Query to count jobs posted on the target date
-    const { error, count } = await supabase
+    let query = supabase
       .from('job_jobrole_sponsored')
       .select('*', { count: 'exact', head: true })
       .eq('date_posted', targetDate);
+
+    if (countryParam) {
+      query = query.eq('country', countryParam);
+    }
+
+    const { error, count } = await query;
 
     if (error) {
       console.error("Supabase query error:", error);

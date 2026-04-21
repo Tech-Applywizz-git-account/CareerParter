@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SponsorshipTable } from "@/components/SponsorshipTable";
+
+import { useFilters } from "@/contexts/FiltersContext";
 
 // 👇 Expected shape by SponsorshipTable
 interface SponsorshipJob {
@@ -25,14 +27,14 @@ export default function CompanyDetailPage() {
   const [jobs, setJobs] = useState<SponsorshipJob[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { selectedCountry } = useFilters();
   const companyName = decodeURIComponent(params.id as string);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await fetch(
-          `/api/company/${encodeURIComponent(companyName)}`,
-        );
+        const url = `/api/company/${encodeURIComponent(companyName)}?country=${encodeURIComponent(selectedCountry.value)}`;
+        const res = await fetch(url);
         const data = await res.json();
 
         const mappedJobs: SponsorshipJob[] = (data.jobs || []).map(
@@ -58,15 +60,8 @@ export default function CompanyDetailPage() {
     };
 
     fetchJobs();
-  }, [companyName]);
+  }, [companyName, selectedCountry.value]);
 
-  if (loading) {
-    return (
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto text-center text-muted-foreground">
-        Loading jobs for {companyName}...
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -89,13 +84,7 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* Jobs Table */}
-      {jobs.length > 0 ? (
-        <SponsorshipTable jobs={jobs} />
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          No jobs found for this company.
-        </div>
-      )}
+      <SponsorshipTable jobs={jobs} loading={loading} />
     </div>
   );
 }

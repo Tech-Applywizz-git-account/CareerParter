@@ -3,7 +3,7 @@
 import { COUNTRIES, Country, useFilters } from "@/contexts/FiltersContext";
 
 export const CountrySelector = () => {
-  const { selectedCountry, setSelectedCountry } = useFilters();
+  const { selectedCountry, setSelectedCountry, availableCountries } = useFilters();
 
   return (
     <div className="flex flex-col gap-2">
@@ -11,7 +11,7 @@ export const CountrySelector = () => {
         🌍 Global Markets
       </p>
       <div className="flex flex-wrap gap-3 sm:gap-4">
-        {COUNTRIES.map((country) => {
+        {availableCountries.map((country) => {
           const isActive = selectedCountry.value === country.value;
           return (
             <button

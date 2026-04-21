@@ -28,9 +28,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Update user status
     const { data, error } = await supabaseAdmin
-      .from("users")
+      .from("profiles")
       .update({ status })
-      .eq("user_id", id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -71,11 +71,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return Response.json({ error: authError.message }, { status: 400 });
     }
 
-    // 2. Delete from public users table
+    // 2. Delete from public profiles table
     const { error: dbError } = await supabaseAdmin
-      .from("users")
+      .from("profiles")
       .delete()
-      .eq("user_id", id);
+      .eq("id", id);
 
     if (dbError) {
       console.error("Error deleting user from db:", dbError);

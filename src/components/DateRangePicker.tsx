@@ -38,6 +38,7 @@ export const DateRangePicker = () => {
   const isToday = fromDate === getDateString(0) && toDate === getDateString(0);
   const isYesterday = fromDate === getDateString(1) && toDate === getDateString(1);
   const isLast7Days = fromDate === getDateString(7) && toDate === getDateString(0);
+  const isAll = !fromDate && !toDate;
 
   return (
     <div className="flex flex-col gap-2">
@@ -78,6 +79,14 @@ export const DateRangePicker = () => {
         {/* Quick Filter Presets */}
         <div className="flex items-center gap-2 pl-0 sm:pl-4 sm:border-l border-border mt-2 sm:mt-0 w-full sm:w-auto sm:ml-auto">
           <Clock className="h-4 w-4 text-muted-foreground hidden sm:block" />
+          <button 
+            onClick={() => { setFromDate(""); setToDate(""); }} 
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-all shadow-sm ${
+              isAll ? "bg-primary text-primary-foreground border-primary" : "bg-accent/30 hover:bg-accent text-foreground border-border hover:border-primary/50"
+            }`}
+          >
+            All
+          </button>
           <button 
             onClick={() => applyPreset(0, 0)} 
             className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-all shadow-sm ${

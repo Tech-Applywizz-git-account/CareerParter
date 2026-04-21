@@ -148,6 +148,19 @@
   h3 {
     @apply text-xl lg:text-2xl;
   }
+
+  /* 🖱️ Ensure hand cursor on interactive elements */
+  button, 
+  a, 
+  select, 
+  input[type="button"], 
+  input[type="submit"], 
+  input[type="checkbox"], 
+  input[type="radio"],
+  .clickable,
+  [role="button"] {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {

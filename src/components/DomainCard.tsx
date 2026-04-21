@@ -14,7 +14,6 @@ interface DomainCardProps {
   toDate?: string;   // YYYY-MM-DD
   jobCount?: number; // Show number of jobs available
 }
-
 function formatDate(d?: string) {
   if (!d) return "";
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -40,7 +39,7 @@ export const DomainCard = ({
 
             {/* Badges area */}
             <div className="flex flex-col items-end gap-2">
-              <span className="px-2.5 py-1 text-[11px] uppercase tracking-wider font-semibold bg-accent text-secondary rounded-full border border-border">
+              <span className="px-2.5 py-1 text-[11px] uppercase tracking-wider font-semibold bg-accent text-accent-foreground rounded-full border border-border">
                 {category === "tech" ? "Tech" : "Non-Tech"}
               </span>
               {jobCount !== undefined && (

@@ -17,9 +17,9 @@ export async function GET(req: NextRequest) {
     }
 
     // If we get here, sessionResponse contains the session data
-    // Fetch all users from the custom users table
+    // Fetch all users from the custom profiles table
     const { data: users, error } = await supabaseAdmin
-      .from("users")
+      .from("profiles")
       .select("*")
       .filter("role", "eq", "lead")
       .order("created_at", { ascending: false });

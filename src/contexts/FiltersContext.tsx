@@ -17,15 +17,17 @@ export type Country = {
 
 export const COUNTRIES: Country[] = [
   { label: "United States US",       value: "United States of America", flag: "fi fi-us" },
+  { label: "United Kingdom UK",      value: "United Kingdom",           flag: "fi fi-gb" },
+  { label: "Ireland IE",             value: "Ireland",                  flag: "fi fi-ie" },
   { label: "United Arab Emirates UAE", value: "United Arab Emirates",     flag: "fi fi-ae" },
   { label: "Canada CA",              value: "Canada",                   flag: "fi fi-ca" },
   { label: "India IN",               value: "India",                    flag: "fi fi-in" },
   { label: "Japan JP",               value: "Japan",                    flag: "fi fi-jp" },
 ];
 
-// ─── Context type ────────────────────────────────────────────────────────────
 interface FiltersState {
   selectedCountry: Country;
+  availableCountries: Country[];
   fromDate: string;
   toDate: string;
   setSelectedCountry: (c: Country) => void;
@@ -35,6 +37,7 @@ interface FiltersState {
 
 const FiltersContext = createContext<FiltersState>({
   selectedCountry: COUNTRIES[0],
+  availableCountries: [COUNTRIES[0]],
   fromDate: "",
   toDate: "",
   setSelectedCountry: () => {},
@@ -44,9 +47,49 @@ const FiltersContext = createContext<FiltersState>({
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 export function FiltersProvider({ children }: { children: ReactNode }) {
+  // Helper to get YYYY-MM-DD
+  const getISO = (d: Date) => d.toISOString().split("T")[0];
+
+  const now = new Date();
+  const oneYearAgo = new Date(now);
+  oneYearAgo.setDate(now.getDate() - 365); // Default to last 1 year
+
   const [selectedCountry, setCountryState] = useState<Country>(COUNTRIES[0]);
+  const [availableCountries, setAvailableCountries] = useState<Country[]>([COUNTRIES[0]]);
   const [fromDate, setFromState] = useState<string>("");
   const [toDate, setToState] = useState<string>("");
+
+  // Fetch available countries from DB
+  useEffect(() => {
+    const fetchAvailable = async () => {
+      try {
+        const res = await fetch("/api/countries");
+        const dbCountryValues = await res.json();
+        
+        if (Array.isArray(dbCountryValues) && dbCountryValues.length > 0) {
+          const filtered = COUNTRIES.filter(c => dbCountryValues.includes(c.value));
+          
+          // If a country in DB isn't in our master list, add a basic entry for it
+          dbCountryValues.forEach(val => {
+            if (!COUNTRIES.some(c => c.value === val)) {
+              filtered.push({ label: val, value: val, flag: "fi fi-xx" });
+            }
+          });
+
+          setAvailableCountries(filtered);
+          
+          // Also check if current selected country is in the available list
+          const isSelectedValid = filtered.some(c => c.value === selectedCountry.value);
+          if (!isSelectedValid) {
+            setCountryState(filtered[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch available countries:", err);
+      }
+    };
+    fetchAvailable();
+  }, [selectedCountry.value]);
 
   // Rehydrate from localStorage on mount
   useEffect(() => {
@@ -88,7 +131,7 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
 
   return (
     <FiltersContext.Provider
-      value={{ selectedCountry, fromDate, toDate, setSelectedCountry, setFromDate, setToDate }}
+      value={{ selectedCountry, availableCountries, fromDate, toDate, setSelectedCountry, setFromDate, setToDate }}
     >
       {children}
     </FiltersContext.Provider>

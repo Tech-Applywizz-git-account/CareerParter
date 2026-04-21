@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { DomainCard } from "@/components/DomainCard";
 import { Button } from "@/components/ui/button";
 import { CountrySelector } from "@/components/CountrySelector";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { useFilters } from "@/contexts/FiltersContext";
-import { getDummyDomains } from "@/lib/dummyData";
+import { Pagination } from "@/components/Pagination";
 import { Search } from "lucide-react";
 
 interface Domain {
   id: string;
   name: string;
   category: "tech" | "non-tech";
+  jobCount: number;
 }
 
 const Domains = () => {
@@ -22,30 +23,24 @@ const Domains = () => {
   const [filteredDomains, setFilteredDomains] = useState<Domain[]>([]);
   const [filter, setFilter] = useState<"all" | "tech" | "non-tech">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 48;
 
   // Re-fetch when country changes
   const fetchDomains = useCallback(async () => {
     setLoading(true);
     try {
-      const url = `/api/domain?country=${encodeURIComponent(selectedCountry.value)}`;
+      const url = `/api/domain?country=${encodeURIComponent(selectedCountry.value)}&from=${fromDate}&to=${toDate}`;
       const res = await fetch(url);
       const data = await res.json();
 
       // Guard: API may return an error object instead of an array
       if (!Array.isArray(data)) {
         console.error("Unexpected /api/domain response:", data);
-        const dummy = getDummyDomains();
-        setDomains(dummy);
-        setFilteredDomains(dummy);
-        return;
-      }
-
-      // If DB returns no records (e.g. for UAE/Dubai), inject dummy data so UI is testable
-      if (data.length === 0 && selectedCountry.value !== "United States of America") {
-        const dummy = getDummyDomains();
-        setDomains(dummy);
-        setFilteredDomains(dummy);
+        setDomains([]);
+        setFilteredDomains([]);
         return;
       }
 
@@ -60,22 +55,32 @@ const Domains = () => {
           id: item.role,
           name: item.role,
           category: item.isTech ? "tech" : "non-tech",
+          jobCount: item.jobCount || 0,
         }));
 
       setDomains(mapped);
       setFilteredDomains(mapped);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Error fetching domains:", err);
     } finally {
       setLoading(false);
     }
-  }, [selectedCountry.value]);
+  }, [selectedCountry.value, fromDate, toDate]);
 
   useEffect(() => {
     fetchDomains();
   }, [fetchDomains]);
 
-  // Filter + Search combined (debounced)
+  // 🕒 Debounce the search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(localSearchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localSearchTerm]);
+
+  // Filter + Search combined
   useEffect(() => {
     const term = searchTerm.toLowerCase();
     const newList = domains.filter((domain) => {
@@ -84,16 +89,29 @@ const Domains = () => {
       return matchesFilter && matchesSearch;
     });
 
-    const timer = setTimeout(() => {
-      setFilteredDomains(newList);
-    }, 150);
-
-    return () => clearTimeout(timer);
+    setFilteredDomains(newList);
+    setCurrentPage(1); // Reset to first page
   }, [searchTerm, filter, domains]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredDomains.length / pageSize);
+  const paginatedDomains = useMemo(() => {
+    return filteredDomains.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredDomains, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Format date for display
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const formatDate = (d: string) => {
+    if (!d) return "All Time";
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in">
@@ -140,8 +158,8 @@ const Domains = () => {
             <input
               type="text"
               placeholder="Search domains..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
             />
           </div>
@@ -176,44 +194,54 @@ const Domains = () => {
       </div>
 
       {/* ── Domain Cards Grid ───────────────────────────────────────────────── */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
+      <div className="space-y-10 pb-10">
+        {useMemo(() => (
+          loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-36 rounded-xl bg-muted/40 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : paginatedDomains.length > 0 ? (
             <div
-              key={i}
-              className="h-36 rounded-xl bg-muted/40 animate-pulse"
-            />
-          ))}
-        </div>
-      ) : filteredDomains.length > 0 ? (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all"
-          key={searchTerm + filter + selectedCountry.value}
-        >
-          {Array.from(
-            new Map(filteredDomains.map((d) => [d.id, d])).values(),
-          ).map((domain, index) => (
-            <DomainCard
-              key={`${domain.id}-${index}`}
-              id={encodeURIComponent(domain.id)}
-              name={domain.name}
-              icon=""
-              category={domain.category}
-              country={selectedCountry.label}
-              fromDate={fromDate}
-              toDate={toDate}
-              jobCount={Math.floor(Math.random() * 40) + 10} // Dummy count for UX satisfaction
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-lg font-medium mb-2">No domains found</p>
-          <p className="text-sm">
-            No results for &quot;{searchTerm}&quot; in {selectedCountry.label}. Try changing the country or search term.
-          </p>
-        </div>
-      )}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all"
+              key={filter + selectedCountry.value + currentPage}
+            >
+              {paginatedDomains.map((domain, index) => (
+                <DomainCard
+                  key={`${domain.id}-${index}`}
+                  id={encodeURIComponent(domain.id)}
+                  name={domain.name}
+                  icon=""
+                  category={domain.category}
+                  country={selectedCountry.label}
+                  fromDate={fromDate}
+                  toDate={toDate}
+                  jobCount={domain.jobCount} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-lg font-medium mb-2">No domains found</p>
+              <p className="text-sm">
+                No results for &quot;{searchTerm}&quot; in {selectedCountry.label}. Try changing the country or search term.
+              </p>
+            </div>
+          )
+        ), [loading, paginatedDomains, filter, selectedCountry.value, currentPage, searchTerm])}
+
+        {!loading && (
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
+      </div>
     </div>
   );
 };
