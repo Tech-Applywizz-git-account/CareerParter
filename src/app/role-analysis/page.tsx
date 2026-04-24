@@ -17,7 +17,7 @@ interface Domain {
 }
 
 const Domains = () => {
-  const { selectedCountry, fromDate, toDate } = useFilters();
+  const { selectedCountries, fromDate, toDate } = useFilters();
 
   const [domains, setDomains] = useState<Domain[]>([]);
   const [filteredDomains, setFilteredDomains] = useState<Domain[]>([]);
@@ -32,7 +32,8 @@ const Domains = () => {
   const fetchDomains = useCallback(async () => {
     setLoading(true);
     try {
-      const url = `/api/domain?country=${encodeURIComponent(selectedCountry.value)}&from=${fromDate}&to=${toDate}`;
+      const countryValues = selectedCountries.map(c => c.value).join(",");
+      const url = `/api/domain?countries=${encodeURIComponent(countryValues)}&from=${fromDate}&to=${toDate}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -66,7 +67,7 @@ const Domains = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedCountry.value, fromDate, toDate]);
+  }, [selectedCountries, fromDate, toDate]);
 
   useEffect(() => {
     fetchDomains();
@@ -130,10 +131,12 @@ const Domains = () => {
         {/* Active filter summary */}
         <div className="flex items-center gap-2 flex-wrap pt-1">
           <span className="text-xs text-muted-foreground">Showing:</span>
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-            <span className={`${selectedCountry.flag} rounded-[2px]`}></span>
-            <span>{selectedCountry.label}</span>
-          </span>
+          {selectedCountries.map(c => (
+              <span key={c.value} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                <span className={c.flag} style={{ display: "inline-block", width: "1.33em", height: "1em", backgroundSize: "cover", borderRadius: "2px" }}></span>
+                <span>{c.label}</span>
+              </span>
+          ))}
           <span className="px-2 py-0.5 rounded-full bg-accent/20 text-foreground text-xs font-medium">
             {formatDate(fromDate)} → {formatDate(toDate)}
           </span>
@@ -147,7 +150,7 @@ const Domains = () => {
           <p className="text-muted-foreground">
             {loading
               ? "Loading..."
-              : `${filteredDomains.length} domain${filteredDomains.length !== 1 ? "s" : ""} in ${selectedCountry.label}`}
+              : `${filteredDomains.length} domain${filteredDomains.length !== 1 ? "s" : ""} across ${selectedCountries.length} countries`}
           </p>
         </div>
 
@@ -208,7 +211,7 @@ const Domains = () => {
           ) : paginatedDomains.length > 0 ? (
             <div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all"
-              key={filter + selectedCountry.value + currentPage}
+              key={filter + selectedCountries.map(c => c.value).join(",") + currentPage}
             >
               {paginatedDomains.map((domain, index) => (
                 <DomainCard
@@ -217,7 +220,7 @@ const Domains = () => {
                   name={domain.name}
                   icon=""
                   category={domain.category}
-                  country={selectedCountry.label}
+                  country={selectedCountries.map(c => c.label).join(", ")}
                   fromDate={fromDate}
                   toDate={toDate}
                   jobCount={domain.jobCount} 
@@ -228,11 +231,11 @@ const Domains = () => {
             <div className="text-center py-16 text-muted-foreground">
               <p className="text-lg font-medium mb-2">No domains found</p>
               <p className="text-sm">
-                No results for &quot;{searchTerm}&quot; in {selectedCountry.label}. Try changing the country or search term.
+                No results for &quot;{searchTerm}&quot; in the selected countries. Try changing filters.
               </p>
             </div>
           )
-        ), [loading, paginatedDomains, filter, selectedCountry.value, currentPage, searchTerm])}
+        ), [loading, paginatedDomains, filter, selectedCountries, currentPage, searchTerm])}
 
         {!loading && (
           <Pagination 

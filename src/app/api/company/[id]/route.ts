@@ -14,30 +14,30 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    // 1️⃣ Decode the company name from the URL
     const { id } = await context.params;
     const companyName = decodeURIComponent(id);
 
-    const country = req.nextUrl.searchParams.get("country") || (await getUserCountry(req));
+    const countriesRaw = req.nextUrl.searchParams.get("countries") || req.nextUrl.searchParams.get("country");
+    const countryList = countriesRaw
+      ? countriesRaw.split(",").map(c => c.trim().toUpperCase())
+      : [await getUserCountry(req)];
 
-    // 2️⃣ Query all jobs for this company
     const { data, error } = await supabase
-      .from("job_jobrole_sponsored")
-      .select("company, job_role_name, title, location, date_posted, url")
-      .eq("company", companyName)
-      .eq("country", country)
+      .from("jobs_all_roles")
+      .select("company_name, role_name, title, location, date_posted, job_url_direct")
+      .eq("company_name", companyName)
+      .in("indeed_search_country", countryList)
       .order("date_posted", { ascending: false, nullsFirst: false });
 
     if (error) throw error;
 
-    // 3️⃣ Format response
     const jobs = (data || []).map((job) => ({
-      company: job.company,
+      company: job.company_name,
       role: job.title,
-      domain: job.job_role_name,
+      domain: job.role_name,
       location: job.location,
       posted: job.date_posted,
-      link: job.url,
+      link: job.job_url_direct,
     }));
 
     return NextResponse.json({ company: companyName, jobs });

@@ -24,14 +24,15 @@ const CompaniesPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 48; // Multiple of 4, 3, 2 and 1 for grid consistency
-  const { selectedCountry, fromDate, toDate } = useFilters();
+  const { selectedCountries, fromDate, toDate } = useFilters();
 
   // 🧠 Fetch companies when filters change
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         setLoading(true);
-        const url = `/api/company?country=${encodeURIComponent(selectedCountry.value)}&from=${fromDate}&to=${toDate}`;
+        const countryValues = selectedCountries.map(c => c.value).join(",");
+        const url = `/api/company?countries=${encodeURIComponent(countryValues)}&from=${fromDate}&to=${toDate}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -57,7 +58,7 @@ const CompaniesPage = () => {
     };
 
     fetchCompanies();
-  }, [selectedCountry.value, fromDate, toDate]);
+  }, [selectedCountries, fromDate, toDate]);
 
   // 🕒 Debounce the search input to keep the UI responsive
   useEffect(() => {
@@ -105,7 +106,7 @@ const CompaniesPage = () => {
         <div>
           <h1 className="text-3xl font-bold mb-1">All Companies</h1>
           <p className="text-muted-foreground">
-            {loading ? "Loading..." : `Browse ${filteredCompanies.length} companies offering job opportunities in ${selectedCountry.label}`}
+            {loading ? "Loading..." : `Browse ${filteredCompanies.length} companies offering job opportunities across ${selectedCountries.length} countries`}
           </p>
         </div>
 
@@ -137,7 +138,7 @@ const CompaniesPage = () => {
           ) : paginatedCompanies.length > 0 ? (
             <div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all"
-              key={selectedCountry.value + currentPage} 
+              key={selectedCountries.map(c => c.value).join(",") + currentPage} 
             >
               {paginatedCompanies.map((company) => (
                 <CompanyCard
@@ -154,7 +155,7 @@ const CompaniesPage = () => {
               No companies found matching &quot;{searchTerm}&quot;
             </div>
           )
-        ), [loading, paginatedCompanies, searchTerm, selectedCountry.value, currentPage])}
+        ), [loading, paginatedCompanies, searchTerm, selectedCountries, currentPage])}
 
         {!loading && (
           <Pagination 

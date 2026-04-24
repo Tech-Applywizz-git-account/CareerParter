@@ -5,26 +5,21 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Database types based on our job_jobrole_sponsored table
+// Database types based on our jobs_all_roles table
 export interface JobData {
   id: number;
-  company: string;
-  job_role_name: string;
-  title: string;
-  location: string;
+  role_id: number | null;
+  role_name: string | null;
+  indeed_search_country: string | null;
+  country: string | null;
+  location: string | null;
+  title: string | null;
+  company_name: string | null;
+  job_url: string | null;
+  job_url_direct: string | null;
   date_posted: string | null;
-  sponsored_job: string;
-  job_description: string;
-  requirements: string;
-  salary_range: string;
-  experience_level: string;
-  job_type: string;
-  remote_work: string;
-  benefits: string;
-  application_deadline: string | null;
-  contact_email: string;
-  website: string;
-  url: string;
+  is_remote: boolean | null;
+  description: string | null;
   created_at: string;
 }
 

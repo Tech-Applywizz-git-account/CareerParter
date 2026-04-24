@@ -28,7 +28,7 @@ interface ChartData {
 
 const Overview = () => {
   const router = useRouter();
-  const { selectedCountry, setSelectedCountry, availableCountries } = useFilters();
+  const { selectedCountries, setSelectedCountries, availableCountries } = useFilters();
   const [latestJobs, setLatestJobs] = useState<Job[]>([]);
   const [topCompanies, setTopCompanies] = useState<ChartData[]>([]);
   const [jobPostsTodayCount, setJobPostsTodayCount] = useState<number>(0);
@@ -38,10 +38,11 @@ const Overview = () => {
     const fetchOverview = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/overview?country=${encodeURIComponent(selectedCountry.value)}`);
+        const countryValues = selectedCountries.map(c => c.value).join(",");
+        const res = await fetch(`/api/overview?countries=${encodeURIComponent(countryValues)}`);
         const data = await res.json();
 
-        const jobPostsRes = await fetch(`/api/job-posts-today?date=today&country=${encodeURIComponent(selectedCountry.value)}`);
+        const jobPostsRes = await fetch(`/api/job-posts-today?date=today&countries=${encodeURIComponent(countryValues)}`);
         const jobPostsData = await jobPostsRes.json();
         setJobPostsTodayCount(jobPostsData.job_posts_today || 0);
 
@@ -73,7 +74,7 @@ const Overview = () => {
     };
 
     fetchOverview();
-  }, [selectedCountry.value]);
+  }, [selectedCountries]);
 
   // ─── Location helpers ─────────────────────────────────────────────────────
   const countLocation = (keyword: string) =>
@@ -414,7 +415,7 @@ const Overview = () => {
                 <button
                   key={country.value}
                   onClick={() => {
-                    setSelectedCountry(country);
+                    setSelectedCountries([country]);
                     router.push("/role-analysis");
                   }}
                   className={`w-full flex items-center justify-between py-3 px-3 rounded-xl border transition-all group cursor-pointer ${

@@ -34,7 +34,7 @@ function formatDate(d: string) {
 export default function DomainDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { selectedCountry, fromDate, toDate, setFromDate, setToDate } = useFilters();
+  const { selectedCountries, fromDate, toDate, setFromDate, setToDate } = useFilters();
 
   const [allJobs, setAllJobs] = useState<SponsorshipJob[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -48,7 +48,7 @@ export default function DomainDetailPage() {
     try {
       // 🚀 Pass date filters to the API so we get date-filtered results
       const params = new URLSearchParams({
-        country: selectedCountry.value,
+        countries: selectedCountries.map(c => c.value).join(","),
       });
       if (fromDate) params.set("from", fromDate);
       if (toDate) params.set("to", toDate);
@@ -80,7 +80,7 @@ export default function DomainDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [roleName, selectedCountry.value, fromDate, toDate]);
+  }, [roleName, selectedCountries, fromDate, toDate]);
 
   useEffect(() => {
     fetchJobs();
@@ -117,10 +117,12 @@ export default function DomainDetailPage() {
           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
             {roleName}
           </span>
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-            <span className={`${selectedCountry.flag} rounded-[2px]`}></span>
-            <span>{selectedCountry.label}</span>
-          </span>
+          {selectedCountries.map(c => (
+            <span key={c.value} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span className={`${c.flag} rounded-[2px]`}></span>
+              <span>{c.label}</span>
+            </span>
+          ))}
           <span className="px-2 py-0.5 rounded-full bg-accent/20 text-foreground text-xs font-medium">
             {formatDate(fromDate)} → {formatDate(toDate)}
           </span>
@@ -131,7 +133,7 @@ export default function DomainDetailPage() {
         <h1 className="text-3xl font-bold mb-1">{roleName}</h1>
         <p className="text-muted-foreground">
           {totalCount} job{totalCount !== 1 ? "s" : ""} in{" "}
-          {selectedCountry.label} · {formatDate(fromDate)} – {formatDate(toDate)}
+          {selectedCountries.map(c => c.label).join(", ")} · {formatDate(fromDate)} – {formatDate(toDate)}
         </p>
       </div>
 

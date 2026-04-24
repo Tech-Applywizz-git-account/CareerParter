@@ -31,16 +31,17 @@ export async function GET(request: NextRequest) {
     
     console.log(`Fetching job posts count for date: ${targetDate}`);
     
-    const countryParam = searchParams.get('country');
+    const countriesRaw = searchParams.get('countries') || searchParams.get('country');
     
     // Query to count jobs posted on the target date
     let query = supabase
-      .from('job_jobrole_sponsored')
+      .from('jobs_all_roles')
       .select('*', { count: 'exact', head: true })
       .eq('date_posted', targetDate);
 
-    if (countryParam) {
-      query = query.eq('country', countryParam);
+    if (countriesRaw) {
+      const countryList = countriesRaw.split(',').map(c => c.trim().toUpperCase());
+      query = query.in('indeed_search_country', countryList);
     }
 
     const { error, count } = await query;

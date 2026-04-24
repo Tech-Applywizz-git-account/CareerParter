@@ -41,7 +41,7 @@ export async function getUserCountry(req: NextRequest) {
 
   if (error) console.error("Error fetching user country:", error);
 
-  return data?.country ?? "United States of America";
+  return data?.country ?? "USA";
 }
 
 export function decrypt(encryptedData: string): any | null {

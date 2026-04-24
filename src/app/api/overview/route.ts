@@ -2,85 +2,106 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getUserCountry } from "@/lib/session";
 
-export const dynamic = "force-dynamic"; // ensure fresh data on each request
+export const dynamic = "force-dynamic";
 
-// ✅ Initialize Supabase server client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!, // service role key required for head+count queries
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 export async function GET(req: NextRequest) {
   try {
+    const countriesRaw = req.nextUrl.searchParams.get("countries") || req.nextUrl.searchParams.get("country");
+    const countryList = countriesRaw
+      ? countriesRaw.split(",").map(c => c.trim().toUpperCase())
+      : [await getUserCountry(req)];
 
-    const country = req.nextUrl.searchParams.get("country") || (await getUserCountry(req));
+    // 1️⃣ Total Jobs count
+    const { count: total_companies, error: totalError } = await supabase
+      .from("jobs_all_roles")
+      .select("*", { count: "exact", head: true })
+      .in("indeed_search_country", countryList);
+    if (totalError) throw totalError;
 
-    // 1️⃣ Total Companies (total rows)
-    const { count: total_companies, error: totalCompaniesError } =
-      await supabase
-        .from("job_jobrole_sponsored")
-        .select("*", { count: "exact", head: true }).eq("country", country);
+    // 2️⃣ Total unique Domains (role_name)
+    const { data: domainData, error: domainError } = await supabase
+      .from("jobs_all_roles")
+      .select("role_name")
+      .in("indeed_search_country", countryList);
+    if (domainError) throw domainError;
+    const total_domains = new Set(domainData?.map(d => d.role_name).filter(Boolean)).size;
 
-    if (totalCompaniesError) throw totalCompaniesError;
-
-    // 2️⃣ Total Domains (unique job_role_name) — using the view `unique_job_role_names`
-    const { count: total_domains, error: totalDomainsError } = await supabase
-      .from("unique_job_role_names")
-      .select("*", { count: "exact", head: true }).eq("country", country);
-
-    if (totalDomainsError) throw totalDomainsError;
-
-    const now = new Date();
-    const lastWeekStart = new Date(now);
-    lastWeekStart.setDate(now.getDate() - 7);
+    // 3️⃣ Jobs posted in last 7 days
+    const lastWeekStart = new Date();
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
     const formattedLastWeekStart = lastWeekStart.toISOString().split("T")[0];
 
-    // 3️⃣ Sponsorship Companies Count (where sponsored_job = 'Yes')
-    const { count: sponsorship_companies, error: sponsorshipError } =
-      await supabase
-        .from("job_jobrole_sponsored")
-        .select("*", { count: "exact", head: true })
-        .eq("sponsored_job", "Yes")
-        .gte("date_posted", formattedLastWeekStart);
+    const { count: sponsorship_companies, error: sponsorshipError } = await supabase
+      .from("jobs_all_roles")
+      .select("*", { count: "exact", head: true })
+      .in("indeed_search_country", countryList)
+      .gte("date_posted", formattedLastWeekStart);
     if (sponsorshipError) throw sponsorshipError;
 
-    // 4️⃣ Latest Jobs (top 10 by date_posted desc)
+    // 4️⃣ Latest 10 Jobs
     const { data: latestJobsData, error: latestJobsError } = await supabase
-      .from("job_jobrole_sponsored")
-      .select("company, job_role_name, title, location, date_posted, url").eq("country", country)
+      .from("jobs_all_roles")
+      .select("company_name, role_name, title, location, date_posted, job_url_direct")
+      .in("indeed_search_country", countryList)
       .order("date_posted", { ascending: false, nullsFirst: false })
       .limit(10);
-
     if (latestJobsError) throw latestJobsError;
 
     const latest_jobs = (latestJobsData || []).map((job) => ({
-      company: job.company,
-      role: job.title,
-      domain: job.job_role_name,
+      company: job.company_name || "Unknown Company",
+      role: job.title || "Unknown Role",
+      domain: job.role_name,
       location: job.location,
       posted: job.date_posted,
-      link: job.url,
+      link: job.job_url_direct,
     }));
-    // 5️⃣ Top Companies (from the view top_10_companies_by_sponsored_jobs)
 
-    const { data: top_companies, error: topCompaniesError } = await supabase
-      .from("companies_by_sponsored_jobs")
-      .select("*").eq("country", country)
-      .order("sponsored_count", { ascending: false })
-      .limit(10);
+    // 5️⃣ Top Companies — paginate to avoid 1000 row cap
+    const PAGE_SIZE = 1000;
+    const companyCounts: Record<string, number> = {};
+    let page = 0;
+    let hasMore = true;
 
-    if (topCompaniesError) throw topCompaniesError;
+    while (hasMore) {
+      const { data: pageData, error: pageError } = await supabase
+        .from("jobs_all_roles")
+        .select("company_name")
+        .in("indeed_search_country", countryList)
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    // ✅ Final Response
+      if (pageError) throw pageError;
+
+      if (!pageData || pageData.length === 0) {
+        hasMore = false;
+      } else {
+        pageData.forEach(row => {
+          const name = row.company_name?.trim();
+          if (name) companyCounts[name] = (companyCounts[name] || 0) + 1;
+        });
+        hasMore = pageData.length === PAGE_SIZE;
+        page++;
+      }
+    }
+
+    const top_companies = Object.entries(companyCounts)
+      .map(([company, count]) => ({ company, sponsored_count: count }))
+      .sort((a, b) => b.sponsored_count - a.sponsored_count)
+      .slice(0, 10);
+
     return NextResponse.json({
       total_companies: total_companies ?? 0,
-      total_domains: total_domains ?? 0,
+      total_domains,
       sponsorship_companies: sponsorship_companies ?? 0,
       latest_jobs,
       top_companies,
     });
   } catch (error: any) {
-    console.error("Error in /api/overview route:", error);
+    console.error("Error in /api/overview:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

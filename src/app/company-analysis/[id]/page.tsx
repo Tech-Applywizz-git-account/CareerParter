@@ -27,13 +27,14 @@ export default function CompanyDetailPage() {
   const [jobs, setJobs] = useState<SponsorshipJob[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { selectedCountry } = useFilters();
+  const { selectedCountries } = useFilters();
   const companyName = decodeURIComponent(params.id as string);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const url = `/api/company/${encodeURIComponent(companyName)}?country=${encodeURIComponent(selectedCountry.value)}`;
+        const countryValues = selectedCountries.map(c => c.value).join(",");
+        const url = `/api/company/${encodeURIComponent(companyName)}?countries=${encodeURIComponent(countryValues)}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -60,7 +61,7 @@ export default function CompanyDetailPage() {
     };
 
     fetchJobs();
-  }, [companyName, selectedCountry.value]);
+  }, [companyName, selectedCountries]);
 
 
   return (
