@@ -26,6 +26,12 @@ function getCompanyRank(name: string): number {
   return 0;
 }
 
+interface CompanyResult {
+  company: string;
+  sponsored_jobs: number;
+  website: string;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const countriesRaw = req.nextUrl.searchParams.get("countries") || req.nextUrl.searchParams.get("country");
@@ -70,7 +76,7 @@ export async function GET(req: NextRequest) {
 
     const companies = Object.entries(groups)
       .map(([company, sponsored_jobs]) => ({ company, sponsored_jobs, website: "" }))
-      .sort((a: any, b: any) => {
+      .sort((a: CompanyResult, b: CompanyResult) => {
         const rankA = getCompanyRank(a.company);
         const rankB = getCompanyRank(b.company);
         if (rankA !== rankB) return rankA - rankB;
@@ -80,8 +86,9 @@ export async function GET(req: NextRequest) {
       });
 
     return NextResponse.json(companies);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/company:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -38,7 +38,14 @@ const CompaniesPage = () => {
 
         // 🚀 Ensure data is an array before mapping
         const rawData = Array.isArray(data) ? data : [];
-        const mapped = rawData.map((item: any) => ({
+        
+        interface APICompany {
+          company: string;
+          sponsored_jobs: number;
+          website?: string;
+        }
+
+        const mapped = rawData.map((item: APICompany) => ({
           id: item.company,
           name: item.company,
           sponsored_jobs: item.sponsored_jobs,

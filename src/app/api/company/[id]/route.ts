@@ -41,8 +41,9 @@ export async function GET(
     }));
 
     return NextResponse.json({ company: companyName, jobs });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/company/[id]:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

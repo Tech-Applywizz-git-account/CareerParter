@@ -8,7 +8,7 @@ const SECRET = process.env.SESSION_SECRET || "dev-secret-key-32byteslong!";
 const KEY = crypto.createHash("sha256").update(SECRET).digest(); // ✅ always 32 bytes
 const IV_LENGTH = 16;
 
-export function encrypt(data: any): string {
+export function encrypt(data: unknown): string {
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
 
@@ -25,7 +25,7 @@ export async function getUserCountry(req: NextRequest) {
   const encryptedSession = req.cookies.get("session")?.value;
   if (!encryptedSession) throw new Error("No session found");
 
-  const val = decrypt(encryptedSession);
+  const val = decrypt<{ userId: string }>(encryptedSession);
   if (!val?.userId) throw new Error("Invalid session payload");
 
   const supabase = createClient(
@@ -44,7 +44,7 @@ export async function getUserCountry(req: NextRequest) {
   return data?.country ?? "USA";
 }
 
-export function decrypt(encryptedData: string): any | null {
+export function decrypt<T = unknown>(encryptedData: string): T | null {
   try {
     const [ivHex, authTagHex, encrypted] = encryptedData.split(":");
     const iv = Buffer.from(ivHex, "hex");
@@ -56,7 +56,7 @@ export function decrypt(encryptedData: string): any | null {
     let decrypted = decipher.update(encrypted, "hex", "utf8");
     decrypted += decipher.final("utf8");
 
-    return JSON.parse(decrypted);
+    return JSON.parse(decrypted) as T;
   } catch (err) {
     console.error("Failed to decrypt session:", err);
     return null;

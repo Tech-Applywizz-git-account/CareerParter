@@ -154,7 +154,7 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
 
       if (Array.isArray(saved?.countries)) {
         const found = saved.countries
-          .map((savedC: any) => {
+          .map((savedC: { value: string }) => {
             const code = migrate(savedC?.value || "");
             return COUNTRIES.find(c => c.value === code);
           })

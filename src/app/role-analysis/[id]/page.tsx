@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Filter, SearchX } from "lucide-react";
+import { ArrowLeft, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SponsorshipTable } from "@/components/SponsorshipTable";
 import { CountrySelector } from "@/components/CountrySelector";
@@ -19,6 +19,17 @@ interface SponsorshipJob {
   postedDate: string;
   jobLink: string;
   sponsorship: boolean;
+  website?: string;
+}
+
+interface APIJob {
+  company: string;
+  domain: string;
+  role: string;
+  location: string;
+  posted: string;
+  link: string;
+  website?: string;
 }
 
 function formatDate(d: string) {
@@ -34,7 +45,7 @@ function formatDate(d: string) {
 export default function DomainDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { selectedCountries, fromDate, toDate, setFromDate, setToDate } = useFilters();
+  const { selectedCountries, fromDate, toDate } = useFilters();
 
   const [allJobs, setAllJobs] = useState<SponsorshipJob[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -58,7 +69,7 @@ export default function DomainDetailPage() {
       const data = await res.json();
 
       const mapped: SponsorshipJob[] = (data.jobs || []).map(
-        (job: any, index: number) => ({
+        (job: APIJob, index: number) => ({
           id: index + 1,
           companyName: job.company,
           companyId: job.company ?? `company-${index}`,
@@ -88,13 +99,6 @@ export default function DomainDetailPage() {
 
   // Date filtering is now done at the API level — allJobs is already filtered
   const filteredJobs = allJobs;
-
-  const latestJobDate = useMemo(() => {
-    if (allJobs.length === 0) return null;
-    const dates = allJobs.map(j => new Date(j.postedDate).getTime()).filter(t => !isNaN(t));
-    if (dates.length === 0) return null;
-    return new Date(Math.max(...dates));
-  }, [allJobs]);
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in">

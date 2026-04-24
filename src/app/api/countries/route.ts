@@ -99,7 +99,7 @@ export async function GET() {
     });
 
     return NextResponse.json(countryList);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/countries:", error);
     return NextResponse.json([], { status: 500 });
   }

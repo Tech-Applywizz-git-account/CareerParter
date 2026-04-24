@@ -100,8 +100,9 @@ export async function GET(req: NextRequest) {
       latest_jobs,
       top_companies,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/overview:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -67,8 +67,9 @@ export async function GET(
       jobs,
       totalCount: exactCount ?? jobs.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/domain/[id]:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

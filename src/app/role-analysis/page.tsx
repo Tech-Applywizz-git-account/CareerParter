@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { DomainCard } from "@/components/DomainCard";
-import { Button } from "@/components/ui/button";
 import { CountrySelector } from "@/components/CountrySelector";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { useFilters } from "@/contexts/FiltersContext";
@@ -13,6 +12,12 @@ interface Domain {
   id: string;
   name: string;
   category: "tech" | "non-tech";
+  jobCount: number;
+}
+
+interface APIDomain {
+  role: string;
+  isTech: boolean;
   jobCount: number;
 }
 
@@ -47,12 +52,12 @@ const Domains = () => {
 
       const seen = new Set<string>();
       const mapped: Domain[] = data
-        .filter((item: any) => {
+        .filter((item: APIDomain) => {
           if (seen.has(item.role)) return false;
           seen.add(item.role);
           return true;
         })
-        .map((item: any) => ({
+        .map((item: APIDomain) => ({
           id: item.role,
           name: item.role,
           category: item.isTech ? "tech" : "non-tech",
@@ -235,7 +240,7 @@ const Domains = () => {
               </p>
             </div>
           )
-        ), [loading, paginatedDomains, filter, selectedCountries, currentPage, searchTerm])}
+        ), [loading, paginatedDomains, filter, selectedCountries, currentPage, searchTerm, fromDate, toDate])}
 
         {!loading && (
           <Pagination 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SponsorshipTable } from "@/components/SponsorshipTable";
 
@@ -19,6 +19,16 @@ interface SponsorshipJob {
   postedDate: string;
   jobLink: string;
   sponsorship: boolean;
+}
+
+// Interface for API response
+interface APIJob {
+  company: string;
+  domain: string;
+  role: string;
+  location: string;
+  posted: string;
+  link: string;
 }
 
 export default function CompanyDetailPage() {
@@ -39,7 +49,7 @@ export default function CompanyDetailPage() {
         const data = await res.json();
 
         const mappedJobs: SponsorshipJob[] = (data.jobs || []).map(
-          (job: any, index: number) => ({
+          (job: APIJob, index: number) => ({
             id: index + 1,
             companyName: job.company,
             companyId: job.company ?? `company-${index}`,

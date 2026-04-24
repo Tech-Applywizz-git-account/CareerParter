@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/domain:", error);
     return NextResponse.json([]);
   }
