@@ -3,7 +3,7 @@ import { decrypt } from "./../session";
 
 export function withAuth(req: NextRequest) {
   const cookie = req.cookies.get("session")?.value;
-  const session = cookie ? decrypt(cookie) : null;
+  const session = cookie ? decrypt<{ userId: string, role: string }>(cookie) : null;
 
   if (!session) {
     console.log("no session found");

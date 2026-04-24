@@ -10,7 +10,14 @@ export async function GET() {
       return Response.json({ user: null }, { status: 401 });
     }
 
-    const user = decrypt(sessionCookie);
+    interface SessionUser {
+      userId: string;
+      email: string;
+      fullName: string;
+      role: string;
+    }
+
+    const user = decrypt<SessionUser>(sessionCookie);
     if (!user) {
       return Response.json({ user: null }, { status: 401 });
     }
