@@ -37,19 +37,20 @@ export const CompanyCard = ({ id, name, sponsored_jobs, website }: CompanyCardPr
       "thomson reuters": "thomsonreuters.com",
     };
 
-    const normalizedName = name.toLowerCase().trim();
+    const safeName = name || "Company";
+    const normalizedName = safeName.toLowerCase().trim();
     if (manualMapping[normalizedName]) return manualMapping[normalizedName];
 
     if (website && website.length > 3) {
       try {
         const url = website.startsWith('http') ? website : `https://${website}`;
         return new URL(url).hostname.replace(/^www\./, '');
-      } catch (e) {
+      } catch {
         // ignore invalid urls
       }
     }
     // Fallback: guess domain from name (lowercase, no spaces)
-    return `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+    return `${safeName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
   };
 
   const domain = getDomain();

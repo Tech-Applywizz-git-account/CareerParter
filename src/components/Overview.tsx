@@ -51,11 +51,11 @@ const Overview = () => {
           id: i + 1,
           companyName: job.company || "Unknown",
           companyId: job.company || `id-${i}`,
-          domainName: job.domain,
-          role: job.role,
+          domainName: job.domain || "Other",
+          role: job.role || "Job Opening",
           location: job.location || "USA",
-          postedDate: job.posted,
-          jobLink: job.link,
+          postedDate: job.posted || new Date().toISOString(),
+          jobLink: job.link || "#",
           sponsorship: true,
         }));
         setLatestJobs(jobs);
@@ -100,7 +100,6 @@ const Overview = () => {
 
   const japanCount = countLocation("Japan") + countLocation("Tokyo");
   const uaeCount = countLocation("UAE") + countLocation("Dubai");
-  const indiaCount = countLocation("India");
 
   const totalGlobal = jobPostsTodayCount || latestJobs.length;
   const listingsAvoided = Math.max(80, totalGlobal * 12);

@@ -21,6 +21,9 @@ interface Job {
 const CompanyLogo = ({ name, website }: { name: string; website?: string }) => {
   const [error, setError] = useState(false);
   
+  // Safe fallback for name to prevent null pointer errors
+  const safeName = name || "Company";
+  
   const getDomain = () => {
     const manualMapping: Record<string, string> = {
       "ibm": "ibm.com",
@@ -41,18 +44,18 @@ const CompanyLogo = ({ name, website }: { name: string; website?: string }) => {
       "thomson reuters": "thomsonreuters.com",
     };
 
-    const normalizedName = name.toLowerCase().trim();
+    const normalizedName = safeName.toLowerCase().trim();
     if (manualMapping[normalizedName]) return manualMapping[normalizedName];
 
     if (website && website.length > 3) {
       try {
         const url = website.startsWith('http') ? website : `https://${website}`;
         return new URL(url).hostname.replace(/^www\./, '');
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
-    return `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+    return `${safeName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
   };
 
   const domain = getDomain();
@@ -64,7 +67,7 @@ const CompanyLogo = ({ name, website }: { name: string; website?: string }) => {
       {!error ? (
         <img 
           src={logoUrl} 
-          alt={name} 
+          alt={safeName} 
           className="max-w-full max-h-full object-contain"
           onError={(e) => {
             if (e.currentTarget.src !== fallbackUrl) {
@@ -76,7 +79,7 @@ const CompanyLogo = ({ name, website }: { name: string; website?: string }) => {
         />
       ) : (
         <span className="text-[10px] font-bold text-primary">
-          {name.charAt(0).toUpperCase()}
+          {safeName.charAt(0).toUpperCase()}
         </span>
       )}
     </div>

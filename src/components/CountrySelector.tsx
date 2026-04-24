@@ -211,7 +211,7 @@ export const CountrySelector = ({
               ) : (
                 <div className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
                   <Globe className="h-10 w-10 opacity-20" />
-                  <p className="text-sm">No countries found matching "{searchQuery}"</p>
+                  <p className="text-sm">No countries found matching &quot;{searchQuery}&quot;</p>
                 </div>
               )}
             </div>
